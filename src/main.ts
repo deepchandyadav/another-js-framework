@@ -12,19 +12,29 @@ const renderPage = (() => {
     const templateDocument = new DOMParser().parseFromString(pageContent, 'text/html');
     const template = templateDocument.querySelector("template")?.innerHTML;
     const script = templateDocument.querySelector("script")?.innerHTML;
-    const style = templateDocument.querySelector("style")?.cloneNode(true);
-    const dynFunc = new Function(script + `
-      function render(scope){
-        return \` ${template} \`;
-      }
-      return { scope: scope, render: render };
-    `);
-    const result = dynFunc();
-    if (app) {
-      app.innerHTML = result.render(result.scope());
-      app.querySelector("style")?.remove();
-      style ? app.appendChild(style) : null;
-    }
+    const style = templateDocument.querySelector("style");
+    const initApi = new Function(script + `
+      return { init, scope };
+    `)();
+
+    Promise.resolve()
+      .then(initApi.init)
+      .then(initApi.scope)
+      .then((data) => {
+        const scopeKeys = Object.keys(data);
+        const renderer = new Function(script + `
+          return function ({${scopeKeys.join(',')}}){
+            return \` ${template} \`;
+          };    
+        `)();
+
+        if (app) {
+          app.innerHTML = renderer(data);
+          app.querySelector("style")?.remove();
+          style ? app.appendChild(style) : null;
+        }
+      });
+
   }
 })();
 
@@ -35,8 +45,8 @@ function pageString(href?: string) {
 
 }
 
-function showLoader(bool) {
-  const elm = document.querySelector("#loading");
+function showLoader(bool: boolean) {
+  const elm = document.querySelector("#loading") as HTMLElement;
   if (elm && bool) {
     elm.style.display = 'block';
   }
