@@ -1,7 +1,7 @@
 import './style.css'
 
 const loadPage = async (page: string) => {
-  const response = await fetch(`http://localhost:3000/${page}/index.html`);
+  const response = await fetch(`http://localhost:3000/${page}.html`);
   const html = await response.text();
   return html;
 }
@@ -9,8 +9,21 @@ const loadPage = async (page: string) => {
 const renderPage = (() => {
   const app = document.querySelector('#app');
   return (pageContent: string) => {
+    const templateDocument = new DOMParser().parseFromString(pageContent, 'text/html');
+    const template = templateDocument.querySelector("template")?.innerHTML;
+    const script = templateDocument.querySelector("script")?.innerHTML;
+    const style = templateDocument.querySelector("style")?.cloneNode(true);
+    const dynFunc = new Function(script + `
+      function render(scope){
+        return \` ${template} \`;
+      }
+      return { scope: scope, render: render };
+    `);
+    const result = dynFunc();
     if (app) {
-      app.innerHTML = pageContent;
+      app.innerHTML = result.render(result.scope());
+      app.querySelector("style")?.remove();
+      style ? app.appendChild(style) : null;
     }
   }
 })();

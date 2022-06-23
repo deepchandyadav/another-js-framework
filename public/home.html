@@ -1,0 +1,25 @@
+<template>
+  <h1>Hello ${ scope.varName }</h1>
+  <p> expression ${ false ? 'will print true': "will pring false" }</p>
+</template>
+
+<style>
+  h1 {
+    color: red;
+  }
+
+  p {
+    color: blue;
+  }
+</style>
+
+<script>
+  let varName = "World";
+
+  function scope() {
+    return {
+      varName
+    }
+  }
+
+</script>
