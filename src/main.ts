@@ -1,49 +1,20 @@
 import './style.css'
+import html6 from './html6';
 
-const loadPage = async (page: string) => {
-  const response = await fetch(`http://localhost:3000/${page}.html`);
-  const html = await response.text();
-  return html;
-}
 
-const renderPage = (() => {
-  const app = document.querySelector('#app');
-  return (pageContent: string) => {
-    const templateDocument = new DOMParser().parseFromString(pageContent, 'text/html');
-    const template = templateDocument.querySelector("template")?.innerHTML;
-    const script = templateDocument.querySelector("script")?.innerHTML;
-    const style = templateDocument.querySelector("style");
-    const initApi = new Function(script + `
-      return { init, scope };
-    `)();
+const routes = [
+  {
+    template: `http://localhost:3000/home.html`,
+    title: "Home page",
+    id: "home"
+  },
+  {
+    template: `http://localhost:3000/about.html`,
+    title: "About page",
+    id: "about"
+  },
 
-    Promise.resolve()
-      .then(initApi.init)
-      .then(initApi.scope)
-      .then((data) => {
-        const scopeKeys = Object.keys(data);
-        const renderer = new Function(script + `
-          return function ({${scopeKeys.join(',')}}){
-            return \` ${template} \`;
-          };    
-        `)();
-
-        if (app) {
-          app.innerHTML = renderer(data);
-          app.querySelector("style")?.remove();
-          style ? app.appendChild(style) : null;
-        }
-      });
-
-  }
-})();
-
-function pageString(href?: string) {
-  href = href ? href : location.href;
-  const url = new URL(href);
-  return url.pathname.trim().substring(1);
-
-}
+];
 
 function showLoader(bool: boolean) {
   const elm = document.querySelector("#loading") as HTMLElement;
@@ -56,30 +27,24 @@ function showLoader(bool: boolean) {
   }
 }
 
-function onNav(href: string) {
-  showLoader(true);
-  const page = pageString(href);
-  loadPage(page).then(html => {
-    renderPage(html);
-    showLoader(false);
-  });
-}
-document.querySelector("nav")?.addEventListener("click", ev => {
-  ev.preventDefault();
-  if (ev?.target?.href && location.href !== ev?.target?.href) {
-    onNav(ev?.target?.href);
-    history.pushState({ url: ev?.target?.href }, "", new URL(ev?.target?.href).pathname);
-  }
-})
 
-
-window.addEventListener("popstate", (ev: PopStateEvent) => {
-  onNav(ev.state.url);
-})
 
 window.addEventListener("DOMContentLoaded", (ev) => {
-  const page = pageString();
-  if (page) {
-    onNav(location.href);
+  const app = document.querySelector('#app');
+  html6.onNavigation = () => {
+    showLoader(true);
   }
+
+  html6.onNavigationEnd = () => {
+    showLoader(false);
+  }
+
+  html6.init(app, routes);
 });
+
+
+
+
+
+
+
