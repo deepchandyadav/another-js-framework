@@ -73,7 +73,7 @@ export default (() => {
   const renderPage = (pageContent: string) => {
     const templateDocument = new DOMParser().parseFromString(pageContent, 'text/html');
     const template = templateDocument.querySelector("template");
-    const nodes = template?.content.cloneNode(true);
+    const nodes: any = template?.content.cloneNode(true);
     const script = templateDocument.querySelector("script")?.innerHTML;
     const style = templateDocument.querySelector("style");
     const initApi = new Function(script + `
