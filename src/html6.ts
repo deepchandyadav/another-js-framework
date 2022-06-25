@@ -101,8 +101,9 @@ export default (() => {
   }
 
   function gotoPage(href: string) {
-    api.onNavigation();
     const page = pageString(href);
+    if (!page) return;
+    api.onNavigation();
     const route = getRoute(page);
     loadPage(route.template).then(html => {
       renderPage(html);
