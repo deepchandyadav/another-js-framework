@@ -1,5 +1,5 @@
 <template>
-  <h1>Hello <print>name</print>
+  <h1>Hello <spa-print>name</spa-print>
   </h1>
 </template>
 
@@ -19,7 +19,7 @@
     console.log('initializing about template');
   }
 
-  function scope() {
+  function exportVars() {
     return { name };
   }
 

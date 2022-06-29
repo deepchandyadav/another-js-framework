@@ -1,12 +1,30 @@
-export default (() => {
-  let routes: any[] = [];
-  let root: HTMLElement;
-  const api = {
-    init: (rootElement: HTMLElement, pageRoutes: any[]) => { },
-    onNavigation: () => { },
-    onNavigationEnd: () => { }
-  };
+const lib = (() => {
 
+  const renderSpaForeach = (node: HTMLElement, data: any) => {
+    node.data = data;
+    node.setAttribute("data-updated", "true");
+  }
+
+  const renderSpaPrint = (node: HTMLElement, data: any) => {
+    node.data = data;
+    node.setAttribute("data-updated", "true");
+  }
+
+  const renderNode = (node: any, data: any) => {
+    if (node.nodeName === "SPA-PRINT") {
+      renderSpaPrint(node, data);
+    }
+    if (node.nodeName === "SPA-FOREACH") {
+      const foreachData = data[node.getAttribute("array")];
+      renderSpaForeach(node, foreachData);
+    }
+    if (node.children && node.children.length > 0) {
+      Array.from(node.children).forEach(child => {
+        renderNode(child, data);
+      })
+    }
+    return node;
+  }
 
   const getDataByPath = (obj: any, path: string) => {
     const keyList = path.split(".");
@@ -20,49 +38,135 @@ export default (() => {
     }
     return obj;
   }
+  return { getDataByPath, renderNode };
+})();
 
-  const renderForeach = (node: HTMLElement, data: any) => {
-    const loopElement = node.querySelector("div");
-    const datakey = node.getAttribute('array') ?? "";
-    const itemAs = node.getAttribute('as') ?? "";
-    const newNodes = Array.from(data[datakey]).map(itemData => {
-      const repeatElm = loopElement?.cloneNode(true);
-      return renderNode(repeatElm, { [itemAs]: itemData });
-    });
-    const foreachDiv = document.createElement("div");
-    foreachDiv.append(...newNodes);
-    foreachDiv.setAttribute("data-foreach", "");
-    node.replaceWith(foreachDiv);
+class SpaPrint extends HTMLElement {
+  public _data = null;
+  public _key = null;
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
   }
 
-  const renderPrint = (node: HTMLElement, data: any) => {
-    const key: string = node.innerText.trim();
+  set data(d: any) {
+    this._data = d;
+  }
+
+  get data() {
+    return this._data;
+  }
+
+  static get observedAttributes() {
+    return ['data-updated'];
+  }
+
+  rerender() {
+    const key = this.innerHTML.trim();
+    const data = this.data;
+    if (!key || !data) return;
     let text = data[key];
     if (!text && key.includes('.')) {
-      text = getDataByPath(data, key);
+      text = lib.getDataByPath(data, key);
     }
     if (typeof data[key] === 'object') {
       text = JSON.stringify(data[key], null, 2);
     }
     const textNode = document.createTextNode(text);
-    node.replaceWith(textNode);
-    return textNode;
+    this.shadowRoot?.appendChild(textNode);
   }
 
-  const renderNode = (node: any, data: any) => {
-    if (node.nodeName === "FOREACH") {
-      renderForeach(node, data);
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "data-updated") {
+      this.rerender();
     }
-    if (node.nodeName === 'PRINT') {
-      return renderPrint(node, data);
-    }
-    if (node.children && node.children.length > 0) {
-      Array.from(node.children).forEach(child => {
-        renderNode(child, data);
-      })
-    }
-    return node;
   }
+
+}
+
+class SpaForeach extends HTMLElement {
+  private _data = null;
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  set data(d: any) {
+    this._data = d;
+  }
+
+  get data() {
+    return this._data;
+  }
+
+  static get observedAttributes() {
+    return ['data-updated'];
+  }
+
+  rerender() {
+    const loopElement = this.querySelector("div");
+    const itemAs = this.getAttribute('as') ?? "";
+    const newNodes = Array.from(this.data).map(itemData => {
+      const repeatElm = loopElement?.cloneNode(true);
+      return lib.renderNode(repeatElm, { [itemAs]: itemData }, this.style);
+    });
+    this.shadowRoot?.append(...newNodes);
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "data-updated") {
+      this.rerender();
+    }
+  }
+
+}
+
+class Component extends HTMLElement {
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  async executeScript(script: string) {
+    const initApi = new Function(script + `
+    return { init, exportVars };
+  `)();
+    const data = await Promise.resolve()
+      .then(initApi.init)
+      .then(initApi.exportVars);
+    return data;
+  }
+
+  connectedCallback() {
+    const template = this.shadowRoot?.querySelector("template");
+    const script = this.shadowRoot?.querySelector("script")?.innerHTML;
+    const style = this.shadowRoot?.querySelector("style");
+    const nodes: any = template?.content.children;
+    const rootDiv = document.createElement("div");
+    rootDiv.append(...nodes);
+    this.executeScript(script).then(data => {
+      lib.renderNode(rootDiv, data, style);
+      this.shadowRoot?.append(rootDiv);
+    });
+  }
+
+}
+
+customElements.define("spa-container", Component);
+customElements.define("spa-print", SpaPrint);
+customElements.define("spa-foreach", SpaForeach);
+
+export default (() => {
+  let routes: any[] = [];
+  let root: HTMLElement;
+  const api = {
+    init: (rootElement: HTMLElement, pageRoutes: any[]) => { },
+    onNavigation: () => { },
+    onNavigationEnd: () => { }
+  };
 
   function pageString(href?: string) {
     href = href ? href : location.href;
@@ -71,28 +175,12 @@ export default (() => {
   }
 
   const renderPage = (pageContent: string) => {
-    const templateDocument = new DOMParser().parseFromString(pageContent, 'text/html');
-    const template = templateDocument.querySelector("template");
-    const nodes: any = template?.content.cloneNode(true);
-    const script = templateDocument.querySelector("script")?.innerHTML;
-    const style = templateDocument.querySelector("style");
-    const initApi = new Function(script + `
-      return { init, scope };
-    `)();
-
-    Promise.resolve()
-      .then(initApi.init)
-      .then(initApi.scope)
-      .then((data) => {
-        if (root) {
-          renderNode(nodes, data);
-          Array.from(root.children).forEach(child => child.remove());
-          root.appendChild(nodes);
-          root.querySelector("style")?.remove();
-          style ? root.appendChild(style) : null;
-        }
-      });
-
+    const spaContainer = document.createElement("spa-container");
+    if (spaContainer.shadowRoot) {
+      spaContainer.shadowRoot.innerHTML = pageContent;
+    }
+    root.querySelector("spa-container")?.remove();
+    root.appendChild(spaContainer);
   }
 
 
@@ -125,9 +213,6 @@ export default (() => {
 
     })
   }
-
-
-
 
   const loadPage = async (templateUrl: string) => {
     const response = await fetch(templateUrl);

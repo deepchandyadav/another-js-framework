@@ -1,23 +1,56 @@
 <template>
-  <h1>Hello <print>name</print>
+  <h1>Hello <spa-print>name</spa-print>
   </h1>
-  <h2>your age is <print>age</print>
+  <h2>your age is <spa-print>age</spa-print>
   </h2>
-  <h3>your hobby is <print>hobby</print>
+  <h3>your hobby is <spa-print>hobby</spa-print>
   </h3>
-  <foreach array="users" as="user">
+  <spa-foreach array="users" as="user">
     <div class="user">
-      <strong>Name: <print>user.name</print>
-      </strong>
-      <p>Email: <print>user.email</print>
+      <p><strong>Id: </strong>
+        <spa-print>user.id</spa-print>
       </p>
-      <p>Pincode: <print>user.address.zipcode</print>
+      <p><strong>Name: </strong>
+        <spa-print>user.name</spa-print>
       </p>
-      <pre class="json">
-        <print>user</print>
-      </pre>
+
+      <p><strong>Username: </strong>
+        <spa-print>user.username</spa-print>
+      </p>
+      <p><strong>Email: </strong>
+        <spa-print>user.email</spa-print>
+      </p>
+      <p><strong>Street: </strong>
+        <spa-print>user.address.street</spa-print>
+      </p>
+      <p><strong>Suite: </strong>
+        <spa-print>user.address.suite</spa-print>
+      </p>
+      <p><strong>City: </strong>
+        <spa-print>user.address.city</spa-print>
+      </p>
+      <p><strong>Zipcode: </strong>
+        <spa-print>user.address.zipcode</spa-print>
+      </p>
+      <p><strong>Latitude: </strong>
+        <spa-print>user.address.geo.lat</spa-print>
+      </p>
+      <p><strong>Longitude: </strong>
+        <spa-print>user.address.geo.lng</spa-print>
+      </p>
+      <p><strong>Phone: </strong>
+        <spa-print>user.phone</spa-print>
+      </p>
+      <p><strong>Website: </strong>
+        <spa-print>user.website</spa-print>
+      </p>
+      <hr>
+      <h3>Company</h3>
+      <p><strong>Name: </strong>
+        <spa-print>user.company.name</spa-print>
+      </p>
     </div>
-  </foreach>
+  </spa-foreach>
 
 </template>
 
@@ -54,7 +87,7 @@
     users = json;
   }
 
-  function scope() {
+  function exportVars() {
     return { name, age, hobby, users }
   }
 
