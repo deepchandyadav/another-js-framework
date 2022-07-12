@@ -6,13 +6,35 @@ const loadPage = async (page: string) => {
   return html;
 }
 
+function makeScopeAttr(length: number) {
+  var result = '';
+  var characters = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
 const renderPage = (() => {
-  const app = document.querySelector('#app');
+  const viewContainer = document.querySelector('#view-container');
   return (pageContent: string) => {
     const templateDocument = new DOMParser().parseFromString(pageContent, 'text/html');
     const template = templateDocument.querySelector("template")?.innerHTML;
     const script = templateDocument.querySelector("script")?.innerHTML;
     const style = templateDocument.querySelector("style");
+    let styleScope = "";
+    if (style?.hasAttribute("scoped")) {
+      styleScope = makeScopeAttr(10);
+      const styles = style?.innerText.split("}")
+        .map(st => st.replaceAll("\n", "").trim())
+        .filter(v => v)
+        .map(st => `${st} }`);
+      console.log(styles)
+      const newStyles = styles.map(st => `[${styleScope}] ${st}`).join(" \n");
+      console.log(newStyles)
+      style.innerHTML = newStyles;
+    }
     const initApi = new Function(script + `
       return { init, scope };
     `)();
@@ -28,10 +50,10 @@ const renderPage = (() => {
           };    
         `)();
 
-        if (app) {
-          app.innerHTML = renderer(data);
-          app.querySelector("style")?.remove();
-          style ? app.appendChild(style) : null;
+        if (viewContainer) {
+          viewContainer.innerHTML = `<div ${styleScope}>${renderer(data)}</div>`;
+          viewContainer.querySelector("style")?.remove();
+          style ? viewContainer.appendChild(style) : null;
         }
       });
 

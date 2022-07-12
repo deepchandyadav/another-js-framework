@@ -1,8 +1,23 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+#loading {
+  display: none;
+}
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  width: 800px;
+  margin: 0 auto;
+}
+
+nav {
+  margin: 40px;
+}
+
+ul {
+  list-style: none;
+  display: flex;
+  justify-content: space-evenly;
 }

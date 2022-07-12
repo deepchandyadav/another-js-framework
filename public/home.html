@@ -1,17 +1,35 @@
 <template>
-  <h1>Hello ${ name }</h1>
+  <div class="home">
+    <h1>Hello ${ name }</h1>
+  </div>
   <h2>your age is ${age}</h2>
   <h3>your hobby is ${hobby}</h3>
-  <pre>${JSON.stringify(users)}</pre>
+  <pre>${JSON.stringify(users, null, 2)}</pre>
 </template>
 
-<style>
+<style scoped>
   h1 {
     color: red;
   }
 
-  p {
+  .home h1 {
+    color: blueviolet;
+  }
+
+  h2 {
     color: blue;
+  }
+
+  h3 {
+    color: green;
+  }
+
+  pre {
+    font-size: 16px;
+    font-family: monospace;
+    text-align: left;
+    color: #484848;
+    margin-top: 25px;
   }
 </style>
 
